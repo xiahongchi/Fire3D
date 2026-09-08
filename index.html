@@ -265,6 +265,21 @@
             </p>
           </div>
 
+          <ol class="viewer-guide" aria-label="How to use the 3D explorer">
+            <li>
+              <span>01</span>
+              <div><strong>Compare representations</strong><p>Switch among RGB input, predicted perception, and reconstructed assets.</p></div>
+            </li>
+            <li>
+              <span>02</span>
+              <div><strong>Navigate and combine</strong><p>Drag to orbit, scroll to zoom, and toggle individual scene layers.</p></div>
+            </li>
+            <li>
+              <span>03</span>
+              <div><strong>Edit an instance</strong><p>In Reconstruction, click any mesh and transform it in its local frame.</p></div>
+            </li>
+          </ol>
+
           <div class="explorer-controls" aria-label="3D scene controls">
             <div class="control-group">
               <span class="control-label">Dataset</span>
@@ -294,7 +309,7 @@
                 <div>
                   <strong data-viewer-scene>FloorPlan 312</strong>
                   <span data-viewer-mode>RGB input point cloud</span>
-                  <span class="viewer-selection" data-viewer-selection hidden></span>
+                  <span class="viewer-selection" data-viewer-selection role="status" aria-live="polite" hidden></span>
                 </div>
                 <button type="button" class="viewer-reset" data-viewer-reset>Reset view</button>
               </div>
@@ -307,6 +322,19 @@
               <div class="layer-panel-head">
                 <span>Layers</span>
                 <button type="button" data-layer-clear>Clear</button>
+              </div>
+              <div class="object-editor" data-object-editor hidden>
+                <div class="object-editor-head">
+                  <span>Object transform</span>
+                  <button type="button" data-transform-reset title="Restore the inferred object transform">Reset</button>
+                </div>
+                <div class="segmented object-transform-modes" role="group" aria-label="Object transform mode">
+                  <button type="button" class="is-active" data-transform-mode="translate" aria-pressed="true" title="Move selected object (G)">Move</button>
+                  <button type="button" data-transform-mode="rotate" aria-pressed="false" title="Rotate selected object (R)">Rotate</button>
+                  <button type="button" data-transform-mode="scale" aria-pressed="false" title="Scale selected object (S)">Scale</button>
+                </div>
+                <p><span><kbd>G</kbd> Move</span><span><kbd>R</kbd> Rotate</span><span><kbd>S</kbd> Scale</span></p>
+                <small>Local axes are centered on the selected instance.</small>
               </div>
               <label><input type="checkbox" data-layer="rgb" checked><span class="layer-swatch swatch-rgb"></span><span><strong>RGB point cloud</strong><small>Fused visual observations</small></span></label>
               <label><input type="checkbox" data-layer="cameras" checked><span class="layer-swatch swatch-camera"></span><span><strong>Capture cameras</strong><small>Four sampled input poses</small></span></label>

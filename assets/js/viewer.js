@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { PLYLoader } from "three/addons/loaders/PLYLoader.js";
@@ -33,6 +34,12 @@ controls.zoomSpeed = 0.72;
 controls.panSpeed = 0.55;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.34;
+
+const transformControls = new TransformControls(camera, canvas);
+transformControls.setMode("translate");
+transformControls.setSpace("local");
+transformControls.setSize(0.78);
+scene.add(transformControls.getHelper());
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0xaeb8b3, 2.15));
 const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
@@ -70,6 +77,9 @@ const statusCopy = document.querySelector("[data-status-copy]");
 const progressBar = document.querySelector("[data-load-progress]");
 const autoRotateInput = document.querySelector("[data-auto-rotate]");
 const selectionLabel = document.querySelector("[data-viewer-selection]");
+const objectEditor = document.querySelector("[data-object-editor]");
+const transformModeButtons = [...document.querySelectorAll("[data-transform-mode]")];
+const transformResetButton = document.querySelector("[data-transform-reset]");
 
 const MODE_PRESETS = {
   input: {
@@ -94,7 +104,11 @@ let activeMode = "input";
 let requestGeneration = 0;
 let interactionPauseUntil = 0;
 let selectedInstance = null;
-let selectionOutline = null;
+let selectedOriginalParent = null;
+let transformPivot = null;
+let selectionEdges = [];
+let selectionEdgeMaterial = null;
+let transformInteractionActive = false;
 let pointerStart = null;
 
 const raycaster = new THREE.Raycaster();
@@ -257,6 +271,11 @@ function prepareGltf(root, layer) {
   root.children.forEach((instance, index) => {
     instance.userData.instanceLayer = layer;
     instance.userData.instanceLabel = instanceDisplayName(instance, layer, index);
+    instance.userData.initialTransform = {
+      position: instance.position.clone(),
+      quaternion: instance.quaternion.clone(),
+      scale: instance.scale.clone(),
+    };
     instance.traverse((object) => {
       if (!object.isMesh) return;
       object.userData.instanceRoot = instance;
@@ -288,7 +307,79 @@ function highlightedMaterial(material) {
   return highlighted;
 }
 
+function setTransformMode(mode) {
+  if (!transformModeButtons.some((button) => button.dataset.transformMode === mode)) return;
+  transformControls.setMode(mode);
+  transformModeButtons.forEach((button) => {
+    const active = button.dataset.transformMode === mode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+function addSelectionVisuals(instance) {
+  selectionEdgeMaterial = new THREE.LineBasicMaterial({
+    color: selectionColor,
+    transparent: true,
+    opacity: 0.95,
+    depthTest: false,
+    depthWrite: false,
+  });
+
+  instance.traverse((object) => {
+    if (!object.isMesh) return;
+    object.userData.selectionOriginalMaterial = object.material;
+    object.material = Array.isArray(object.material)
+      ? object.material.map(highlightedMaterial)
+      : highlightedMaterial(object.material);
+
+    const lines = new THREE.LineSegments(
+      new THREE.EdgesGeometry(object.geometry, 34),
+      selectionEdgeMaterial,
+    );
+    lines.renderOrder = 10;
+    object.add(lines);
+    selectionEdges.push(lines);
+  });
+}
+
+function createTransformPivot(instance) {
+  instance.updateWorldMatrix(true, true);
+  const bounds = new THREE.Box3().setFromObject(instance, true);
+  const center = bounds.isEmpty()
+    ? instance.getWorldPosition(new THREE.Vector3())
+    : bounds.getCenter(new THREE.Vector3());
+  const orientation = instance.getWorldQuaternion(new THREE.Quaternion());
+  const originalParent = instance.parent;
+  const pivot = new THREE.Object3D();
+  pivot.name = "selected-instance-pivot";
+  pivot.position.copy(center);
+  pivot.quaternion.copy(orientation);
+
+  scene.add(pivot);
+  originalParent.attach(pivot);
+  pivot.attach(instance);
+  pivot.updateWorldMatrix(true, true);
+  return { originalParent, pivot };
+}
+
 function clearSelection() {
+  transformControls.detach();
+  controls.enabled = true;
+  transformInteractionActive = false;
+  pointerStart = null;
+
+  if (selectedInstance && transformPivot && selectedOriginalParent) {
+    selectedOriginalParent.attach(selectedInstance);
+    transformPivot.parent?.remove(transformPivot);
+  }
+
+  for (const lines of selectionEdges) {
+    lines.parent?.remove(lines);
+    lines.geometry.dispose();
+  }
+  selectionEdgeMaterial?.dispose();
+
   if (selectedInstance) {
     selectedInstance.traverse((object) => {
       if (!object.isMesh || !object.userData.selectionOriginalMaterial) return;
@@ -298,56 +389,45 @@ function clearSelection() {
       delete object.userData.selectionOriginalMaterial;
     });
   }
-  if (selectionOutline) {
-    const outlineMaterials = new Set();
-    selectionOutline.traverse((object) => {
-      object.geometry?.dispose();
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
-      materials.filter(Boolean).forEach((material) => outlineMaterials.add(material));
-    });
-    outlineMaterials.forEach((material) => material.dispose());
-    scene.remove(selectionOutline);
-  }
+
   selectedInstance = null;
-  selectionOutline = null;
+  selectedOriginalParent = null;
+  transformPivot = null;
+  selectionEdges = [];
+  selectionEdgeMaterial = null;
+  interactionPauseUntil = performance.now() + 1400;
   selectionLabel.hidden = true;
   selectionLabel.textContent = "";
+  objectEditor.hidden = true;
 }
 
 function selectInstance(instance) {
+  if (instance === selectedInstance) return;
   clearSelection();
   if (!instance) return;
 
   selectedInstance = instance;
-  selectedInstance.updateWorldMatrix(true, true);
-  const outline = new THREE.Group();
-  const outlineMaterial = new THREE.LineBasicMaterial({
-    color: selectionColor,
-    transparent: true,
-    opacity: 0.95,
-    depthTest: false,
-    depthWrite: false,
-  });
-
-  selectedInstance.traverse((object) => {
-    if (!object.isMesh) return;
-    object.userData.selectionOriginalMaterial = object.material;
-    object.material = Array.isArray(object.material)
-      ? object.material.map(highlightedMaterial)
-      : highlightedMaterial(object.material);
-
-    const edges = new THREE.EdgesGeometry(object.geometry, 34);
-    const lines = new THREE.LineSegments(edges, outlineMaterial);
-    lines.matrixAutoUpdate = false;
-    lines.matrix.copy(object.matrixWorld);
-    lines.renderOrder = 10;
-    outline.add(lines);
-  });
-
-  selectionOutline = outline;
-  scene.add(selectionOutline);
+  ({ originalParent: selectedOriginalParent, pivot: transformPivot } = createTransformPivot(instance));
+  addSelectionVisuals(instance);
+  transformControls.attach(transformPivot);
+  transformControls.setSpace("local");
+  controls.autoRotate = false;
+  interactionPauseUntil = Number.POSITIVE_INFINITY;
   selectionLabel.textContent = `Selected · ${instance.userData.instanceLabel}`;
   selectionLabel.hidden = false;
+  objectEditor.hidden = false;
+}
+
+function resetSelectedTransform() {
+  if (!selectedInstance) return;
+  const instance = selectedInstance;
+  const initial = instance.userData.initialTransform;
+  clearSelection();
+  instance.position.copy(initial.position);
+  instance.quaternion.copy(initial.quaternion);
+  instance.scale.copy(initial.scale);
+  instance.updateMatrixWorld(true, true);
+  selectInstance(instance);
 }
 
 async function loadLayer(entry, layer) {
@@ -539,6 +619,12 @@ modeButtons.forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
 });
 
+transformModeButtons.forEach((button) => {
+  button.addEventListener("click", () => setTransformMode(button.dataset.transformMode));
+});
+
+transformResetButton?.addEventListener("click", resetSelectedTransform);
+
 sceneSelect.addEventListener("change", () => {
   const definition = SCENES[activeDataset].find(({ id }) => id === sceneSelect.value);
   activateScene(definition);
@@ -568,6 +654,7 @@ function selectableMeshes() {
 }
 
 function selectAtPointer(event) {
+  if (transformInteractionActive) return;
   const bounds = canvas.getBoundingClientRect();
   pointer.set(
     ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
@@ -578,12 +665,37 @@ function selectAtPointer(event) {
   selectInstance(hit?.object.userData.instanceRoot ?? null);
 }
 
+transformControls.addEventListener("mouseDown", () => {
+  transformInteractionActive = true;
+  pointerStart = null;
+  controls.enabled = false;
+  controls.autoRotate = false;
+});
+
+transformControls.addEventListener("mouseUp", () => {
+  controls.enabled = true;
+  interactionPauseUntil = selectedInstance
+    ? Number.POSITIVE_INFINITY
+    : performance.now() + 1400;
+  requestAnimationFrame(() => {
+    transformInteractionActive = false;
+  });
+});
+
 canvas.addEventListener("pointerdown", (event) => {
   if (event.pointerType === "mouse" && event.button !== 0) return;
+  if (transformInteractionActive || transformControls.axis) {
+    pointerStart = null;
+    return;
+  }
   pointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY };
 });
 
 canvas.addEventListener("pointerup", (event) => {
+  if (transformInteractionActive) {
+    pointerStart = null;
+    return;
+  }
   if (!pointerStart || pointerStart.id !== event.pointerId) return;
   const distance = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
   pointerStart = null;
@@ -605,7 +717,7 @@ document.querySelector("[data-layer-clear]")?.addEventListener("click", () => {
 document.querySelector("[data-viewer-reset]")?.addEventListener("click", fitCamera);
 
 autoRotateInput?.addEventListener("change", () => {
-  controls.autoRotate = autoRotateInput.checked;
+  controls.autoRotate = autoRotateInput.checked && !selectedInstance;
 });
 
 controls.addEventListener("start", () => {
@@ -613,7 +725,24 @@ controls.addEventListener("start", () => {
 });
 
 controls.addEventListener("end", () => {
-  interactionPauseUntil = performance.now() + 1400;
+  interactionPauseUntil = selectedInstance
+    ? Number.POSITIVE_INFINITY
+    : performance.now() + 1400;
+});
+
+window.addEventListener("keydown", (event) => {
+  if (!selectedInstance) return;
+  if (event.key === "Escape") {
+    clearSelection();
+    return;
+  }
+  if (event.target instanceof HTMLElement && event.target.closest("button, input, select, textarea, [contenteditable]")) {
+    return;
+  }
+  const mode = { g: "translate", r: "rotate", s: "scale" }[event.key.toLowerCase()];
+  if (!mode) return;
+  event.preventDefault();
+  setTransformMode(mode);
 });
 
 const resizeObserver = new ResizeObserver(() => {
@@ -626,7 +755,7 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(stage);
 
 renderer.setAnimationLoop((time) => {
-  if (autoRotateInput?.checked && time > interactionPauseUntil) {
+  if (!selectedInstance && autoRotateInput?.checked && time > interactionPauseUntil) {
     controls.autoRotate = true;
   }
   controls.update();
@@ -647,7 +776,17 @@ window.__fire3dViewer = {
   get loadedLayers() {
     return [...activeEntry.layers.keys()];
   },
+  get selectedInstance() {
+    return selectedInstance;
+  },
+  get transformPivot() {
+    return transformPivot;
+  },
+  transformControls,
+  clearSelection,
   fitCamera,
+  resetSelectedTransform,
   setDataset,
   setMode,
+  setTransformMode,
 };
