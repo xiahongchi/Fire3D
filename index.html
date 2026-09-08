@@ -184,10 +184,23 @@
             <p class="section-kicker">Why a full room fits</p>
             <h3>HC-VAE makes multi-object generation a scene operation.</h3>
             <p>
-              Our HC-VAE compresses TRELLIS.2 shape and material fields from a sparse <code>32³ × 32</code>
-              representation into <code>8³ × 64</code> latents. This changes the practical unit of inference from one
-              selected object to a batch of scene entities while preserving geometry and appearance quality.
+              <strong>SC-VAE comes from <a href="https://microsoft.github.io/TRELLIS.2/">TRELLIS.2</a>; HC-VAE is introduced by Fire3D.</strong> We retain the pretrained
+              SC-VAE representation and add a second, hierarchical compression stage for both shape and material.
+              This changes the practical unit of inference from one selected object to a batch of scene entities.
             </p>
+            <div class="representation-lineage" aria-label="SC-VAE and HC-VAE relationship">
+              <div>
+                <span>TRELLIS.2</span>
+                <strong>SC-VAE latent</strong>
+                <code>32³ × 32</code>
+              </div>
+              <div class="lineage-step" aria-hidden="true"><span>Fire3D adds</span><b>→</b></div>
+              <div class="is-fire3d">
+                <span>Our contribution</span>
+                <strong>HC-VAE latent</strong>
+                <code>8³ × 64</code>
+              </div>
+            </div>
             <dl class="mechanism-facts">
               <div><dt>Object code</dt><dd><strong>256 KB</strong><span>shape and material latents</span></dd></div>
               <div><dt>Compression</dt><dd><strong>32&times;</strong><span>beyond the SC-VAE latent</span></dd></div>
@@ -197,8 +210,47 @@
           </div>
           <figure class="paper-figure hcvae-figure">
             <img src="assets/hcvae.png" alt="The Fire3D hierarchical compression VAE architecture.">
-            <figcaption><strong>Hierarchical compression for shape and material.</strong> Lightweight sparse 3D encoders compress expressive SC-VAE fields into compact latents for batched flow matching and decoding.</figcaption>
+            <figcaption><strong>Hierarchical compression for shape and material.</strong> Fire3D's lightweight sparse 3D encoders compress the SC-VAE fields adopted from TRELLIS.2 into compact latents for batched flow matching and decoding.</figcaption>
           </figure>
+          <div class="vae-ablation">
+            <div class="vae-ablation-head">
+              <div>
+                <span>Measured trade-off</span>
+                <h4>32&times; compression with a small reconstruction change</h4>
+              </div>
+              <p>Selected geometry and rendering metrics from the paper's VAE comparison.</p>
+            </div>
+            <div class="vae-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th rowspan="2" scope="col">Representation</th>
+                    <th rowspan="2" scope="col">Latent</th>
+                    <th colspan="3" scope="colgroup">Toys4K</th>
+                    <th colspan="3" scope="colgroup">Imaginarium</th>
+                  </tr>
+                  <tr>
+                    <th scope="col">CD ↓</th><th scope="col">F1 ↑</th><th scope="col">PSNR ↑</th>
+                    <th scope="col">CD ↓</th><th scope="col">F1 ↑</th><th scope="col">PSNR ↑</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">SC-VAE only <span>TRELLIS.2</span></th>
+                    <td><code>32³ × 32</code></td>
+                    <td>0.261</td><td>0.997</td><td>26.801</td>
+                    <td>0.407</td><td>0.919</td><td>21.966</td>
+                  </tr>
+                  <tr class="is-fire3d">
+                    <th scope="row">SC-VAE + HC-VAE <span>Fire3D</span></th>
+                    <td><code>8³ × 64</code></td>
+                    <td>0.269</td><td>0.991</td><td>26.635</td>
+                    <td>0.413</td><td>0.914</td><td>21.665</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -242,6 +294,7 @@
                 <div>
                   <strong data-viewer-scene>FloorPlan 312</strong>
                   <span data-viewer-mode>RGB input point cloud</span>
+                  <span class="viewer-selection" data-viewer-selection hidden></span>
                 </div>
                 <button type="button" class="viewer-reset" data-viewer-reset>Reset view</button>
               </div>
@@ -256,6 +309,7 @@
                 <button type="button" data-layer-clear>Clear</button>
               </div>
               <label><input type="checkbox" data-layer="rgb" checked><span class="layer-swatch swatch-rgb"></span><span><strong>RGB point cloud</strong><small>Fused visual observations</small></span></label>
+              <label><input type="checkbox" data-layer="cameras" checked><span class="layer-swatch swatch-camera"></span><span><strong>Capture cameras</strong><small>Four sampled input poses</small></span></label>
               <label><input type="checkbox" data-layer="instances"><span class="layer-swatch swatch-instance"></span><span><strong>Instances</strong><small>Predicted 3D segmentation</small></span></label>
               <label><input type="checkbox" data-layer="obbs"><span class="layer-swatch swatch-box"></span><span><strong>Oriented boxes</strong><small>6-DoF object pose</small></span></label>
               <label><input type="checkbox" data-layer="foreground"><span class="layer-swatch swatch-mesh"></span><span><strong>Foreground assets</strong><small>Complete textured objects</small></span></label>

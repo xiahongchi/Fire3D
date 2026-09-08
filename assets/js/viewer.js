@@ -69,11 +69,12 @@ const status = document.querySelector("[data-viewer-status]");
 const statusCopy = document.querySelector("[data-status-copy]");
 const progressBar = document.querySelector("[data-load-progress]");
 const autoRotateInput = document.querySelector("[data-auto-rotate]");
+const selectionLabel = document.querySelector("[data-viewer-selection]");
 
 const MODE_PRESETS = {
   input: {
     label: "RGB input point cloud",
-    layers: ["rgb"],
+    layers: ["rgb", "cameras"],
   },
   perception: {
     label: "Predicted instances and oriented boxes",
@@ -92,6 +93,13 @@ let activeEntry = null;
 let activeMode = "input";
 let requestGeneration = 0;
 let interactionPauseUntil = 0;
+let selectedInstance = null;
+let selectionOutline = null;
+let pointerStart = null;
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+const selectionColor = new THREE.Color(0x00a878);
 
 function setStatus(copy, progress = null) {
   statusCopy.textContent = copy;
@@ -167,24 +175,179 @@ function boxesFromGeometry(geometry) {
   return boxes;
 }
 
+function cameraRigFromDefinition(definition) {
+  const group = new THREE.Group();
+  group.name = "cameras";
+
+  const linePositions = [];
+  const cameraPositions = [];
+  const appendSegment = (start, end) => {
+    linePositions.push(start.x, start.y, start.z, end.x, end.y, end.z);
+  };
+
+  for (const [eyeValues, targetValues, upValues] of definition.cameraRig.poses) {
+    const eye = new THREE.Vector3(...eyeValues);
+    const target = new THREE.Vector3(...targetValues);
+    const up = new THREE.Vector3(...upValues).normalize();
+    const forward = target.sub(eye).normalize();
+    const right = new THREE.Vector3().crossVectors(forward, up).normalize();
+    const vertical = new THREE.Vector3().crossVectors(right, forward).normalize();
+    const depth = 0.22;
+    const halfHeight = Math.tan(THREE.MathUtils.degToRad(definition.cameraRig.fov / 2)) * depth;
+    const center = eye.clone().addScaledVector(forward, depth);
+    const corners = [
+      center.clone().addScaledVector(right, -halfHeight).addScaledVector(vertical, halfHeight),
+      center.clone().addScaledVector(right, halfHeight).addScaledVector(vertical, halfHeight),
+      center.clone().addScaledVector(right, halfHeight).addScaledVector(vertical, -halfHeight),
+      center.clone().addScaledVector(right, -halfHeight).addScaledVector(vertical, -halfHeight),
+    ];
+
+    for (const corner of corners) appendSegment(eye, corner);
+    for (let index = 0; index < corners.length; index += 1) {
+      appendSegment(corners[index], corners[(index + 1) % corners.length]);
+    }
+    appendSegment(
+      corners[0].clone().lerp(corners[1], 0.5),
+      corners[0].clone().lerp(corners[1], 0.5).addScaledVector(vertical, halfHeight * 0.28),
+    );
+    cameraPositions.push(eye.x, eye.y, eye.z);
+  }
+
+  const lineGeometry = new THREE.BufferGeometry();
+  lineGeometry.setAttribute("position", new THREE.Float32BufferAttribute(linePositions, 3));
+  lineGeometry.computeBoundingSphere();
+  const lines = new THREE.LineSegments(
+    lineGeometry,
+    new THREE.LineBasicMaterial({
+      color: 0x087f65,
+      transparent: true,
+      opacity: 0.86,
+      depthTest: false,
+      depthWrite: false,
+    }),
+  );
+  lines.renderOrder = 8;
+
+  const pointGeometry = new THREE.BufferGeometry();
+  pointGeometry.setAttribute("position", new THREE.Float32BufferAttribute(cameraPositions, 3));
+  pointGeometry.computeBoundingSphere();
+  const points = new THREE.Points(
+    pointGeometry,
+    new THREE.PointsMaterial({
+      color: 0xe96343,
+      size: 0.07,
+      sizeAttenuation: true,
+      depthTest: false,
+      depthWrite: false,
+    }),
+  );
+  points.renderOrder = 9;
+  group.add(lines, points);
+  return group;
+}
+
+function instanceDisplayName(instance, layer, index) {
+  if (layer === "background") return "Room background";
+  const match = instance.name.match(/(?:instance|background)_(\d+)/i);
+  return match ? `Instance ${match[1]}` : `Instance ${String(index + 1).padStart(4, "0")}`;
+}
+
 function prepareGltf(root, layer) {
   root.name = layer;
-  root.traverse((object) => {
-    if (!object.isMesh) return;
-    object.castShadow = false;
-    object.receiveShadow = false;
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    for (const material of materials) {
-      material.side = THREE.DoubleSide;
-      material.needsUpdate = true;
-      for (const key of ["map", "normalMap", "roughnessMap", "metalnessMap"]) {
-        if (material[key]) {
-          material[key].anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  root.children.forEach((instance, index) => {
+    instance.userData.instanceLayer = layer;
+    instance.userData.instanceLabel = instanceDisplayName(instance, layer, index);
+    instance.traverse((object) => {
+      if (!object.isMesh) return;
+      object.userData.instanceRoot = instance;
+      object.castShadow = false;
+      object.receiveShadow = false;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        material.side = THREE.DoubleSide;
+        material.needsUpdate = true;
+        for (const key of ["map", "normalMap", "roughnessMap", "metalnessMap"]) {
+          if (material[key]) {
+            material[key].anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+          }
         }
       }
-    }
+    });
   });
   return root;
+}
+
+function highlightedMaterial(material) {
+  const highlighted = material.clone();
+  if (highlighted.color) highlighted.color.lerp(selectionColor, 0.24);
+  if (highlighted.emissive) {
+    highlighted.emissive.copy(selectionColor);
+    highlighted.emissiveIntensity = 0.72;
+  }
+  highlighted.needsUpdate = true;
+  return highlighted;
+}
+
+function clearSelection() {
+  if (selectedInstance) {
+    selectedInstance.traverse((object) => {
+      if (!object.isMesh || !object.userData.selectionOriginalMaterial) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => material.dispose());
+      object.material = object.userData.selectionOriginalMaterial;
+      delete object.userData.selectionOriginalMaterial;
+    });
+  }
+  if (selectionOutline) {
+    const outlineMaterials = new Set();
+    selectionOutline.traverse((object) => {
+      object.geometry?.dispose();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.filter(Boolean).forEach((material) => outlineMaterials.add(material));
+    });
+    outlineMaterials.forEach((material) => material.dispose());
+    scene.remove(selectionOutline);
+  }
+  selectedInstance = null;
+  selectionOutline = null;
+  selectionLabel.hidden = true;
+  selectionLabel.textContent = "";
+}
+
+function selectInstance(instance) {
+  clearSelection();
+  if (!instance) return;
+
+  selectedInstance = instance;
+  selectedInstance.updateWorldMatrix(true, true);
+  const outline = new THREE.Group();
+  const outlineMaterial = new THREE.LineBasicMaterial({
+    color: selectionColor,
+    transparent: true,
+    opacity: 0.95,
+    depthTest: false,
+    depthWrite: false,
+  });
+
+  selectedInstance.traverse((object) => {
+    if (!object.isMesh) return;
+    object.userData.selectionOriginalMaterial = object.material;
+    object.material = Array.isArray(object.material)
+      ? object.material.map(highlightedMaterial)
+      : highlightedMaterial(object.material);
+
+    const edges = new THREE.EdgesGeometry(object.geometry, 34);
+    const lines = new THREE.LineSegments(edges, outlineMaterial);
+    lines.matrixAutoUpdate = false;
+    lines.matrix.copy(object.matrixWorld);
+    lines.renderOrder = 10;
+    outline.add(lines);
+  });
+
+  selectionOutline = outline;
+  scene.add(selectionOutline);
+  selectionLabel.textContent = `Selected · ${instance.userData.instanceLabel}`;
+  selectionLabel.hidden = false;
 }
 
 async function loadLayer(entry, layer) {
@@ -194,7 +357,9 @@ async function loadLayer(entry, layer) {
   const promise = (async () => {
     const url = entry.definition.assets[layer];
     let object;
-    if (layer === "rgb" || layer === "instances") {
+    if (layer === "cameras") {
+      object = cameraRigFromDefinition(entry.definition);
+    } else if (layer === "rgb" || layer === "instances") {
       const geometry = await loadWith(plyLoader, url, layer === "rgb" ? "RGB observations" : "instances");
       object = pointCloudFromGeometry(geometry, layer);
     } else if (layer === "obbs") {
@@ -244,6 +409,13 @@ function selectedLayers() {
 async function syncLayers({ fit = false } = {}) {
   const generation = requestGeneration;
   const wanted = new Set(selectedLayers());
+  if (selectedInstance && !wanted.has(selectedInstance.userData.instanceLayer)) {
+    clearSelection();
+  }
+  stage.classList.toggle(
+    "has-selectable-assets",
+    wanted.has("foreground") || wanted.has("background"),
+  );
   for (const [layer, object] of activeEntry.layers) {
     object.visible = wanted.has(layer);
   }
@@ -302,6 +474,7 @@ function renderFrames() {
     image.alt = `${activeScene.label}, RGB frame ${frame}`;
     image.loading = "lazy";
     image.decoding = "async";
+    image.draggable = false;
     const caption = document.createElement("figcaption");
     caption.textContent = `frame ${String(frame).padStart(2, "0")}`;
     figure.append(image, caption);
@@ -322,6 +495,7 @@ function populateSceneSelect() {
 
 function activateScene(definition) {
   requestGeneration += 1;
+  clearSelection();
   if (activeEntry) scene.remove(activeEntry.group);
   activeScene = definition;
   activeEntry = entryFor(definition);
@@ -379,6 +553,45 @@ layerInputs.forEach((input) => {
     modeLabel.textContent = "Custom layer view";
     syncLayers({ fit: false });
   });
+});
+
+function selectableMeshes() {
+  const meshes = [];
+  for (const layer of ["foreground", "background"]) {
+    const root = activeEntry?.layers.get(layer);
+    if (!root?.visible) continue;
+    root.traverse((object) => {
+      if (object.isMesh && object.userData.instanceRoot) meshes.push(object);
+    });
+  }
+  return meshes;
+}
+
+function selectAtPointer(event) {
+  const bounds = canvas.getBoundingClientRect();
+  pointer.set(
+    ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+    -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
+  );
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObjects(selectableMeshes(), false)[0];
+  selectInstance(hit?.object.userData.instanceRoot ?? null);
+}
+
+canvas.addEventListener("pointerdown", (event) => {
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  pointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY };
+});
+
+canvas.addEventListener("pointerup", (event) => {
+  if (!pointerStart || pointerStart.id !== event.pointerId) return;
+  const distance = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
+  pointerStart = null;
+  if (distance <= 5) selectAtPointer(event);
+});
+
+canvas.addEventListener("pointercancel", () => {
+  pointerStart = null;
 });
 
 document.querySelector("[data-layer-clear]")?.addEventListener("click", () => {

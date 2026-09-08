@@ -54,22 +54,20 @@ function paperCell(url, method, context) {
     figure.classList.add("is-fire3d");
   }
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.target = "_blank";
-  link.rel = "noopener";
-  link.setAttribute("aria-label", `Open ${method.label} result for ${context}`);
+  const media = document.createElement("div");
+  media.className = "result-media";
 
   const image = document.createElement("img");
   image.src = url;
   image.alt = `${method.label} result for ${context}`;
   image.loading = "lazy";
   image.decoding = "async";
+  image.draggable = false;
 
   const caption = document.createElement("figcaption");
   caption.textContent = method.label;
-  link.append(image);
-  figure.append(link, caption);
+  media.append(image);
+  figure.append(media, caption);
   return figure;
 }
 
@@ -203,6 +201,7 @@ function comparisonCell(url, method, context, eager = false) {
   image.alt = `${method} result for ${context}`;
   image.loading = eager ? "eager" : "lazy";
   image.decoding = "async";
+  image.draggable = false;
   const caption = document.createElement("figcaption");
   const name = document.createElement("strong");
   const detail = document.createElement("span");
@@ -319,6 +318,10 @@ function renderComposed() {
 
 composedSelect?.addEventListener("change", renderComposed);
 renderComposed();
+
+document.querySelectorAll("main img").forEach((image) => {
+  image.draggable = false;
+});
 
 const copyButton = document.querySelector("[data-copy-citation]");
 copyButton?.addEventListener("click", async () => {

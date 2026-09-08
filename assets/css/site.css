@@ -48,6 +48,10 @@ canvas {
   max-width: 100%;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 button,
 select {
   font: inherit;
@@ -597,7 +601,8 @@ select {
 .hcvae-layout {
   display: grid;
   grid-template-columns: minmax(280px, 0.75fr) minmax(520px, 1.25fr);
-  gap: 68px;
+  column-gap: 68px;
+  row-gap: 48px;
   align-items: center;
   padding-top: 76px;
 }
@@ -613,6 +618,87 @@ select {
 .hcvae-copy > p:not(.section-kicker) {
   margin: 18px 0 0;
   color: var(--muted);
+}
+
+.hcvae-copy > p strong {
+  color: var(--ink);
+}
+
+.hcvae-copy > p strong a {
+  color: var(--green-dark);
+}
+
+.hcvae-layout > * {
+  min-width: 0;
+}
+
+.representation-lineage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  margin-top: 24px;
+  border-top: 1px solid var(--line-dark);
+  border-bottom: 1px solid var(--line-dark);
+}
+
+.representation-lineage > div:not(.lineage-step) {
+  min-width: 0;
+  padding: 14px 0;
+}
+
+.representation-lineage > div.is-fire3d {
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+}
+
+.representation-lineage span,
+.representation-lineage strong,
+.representation-lineage code {
+  display: block;
+}
+
+.representation-lineage span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.representation-lineage strong {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.representation-lineage code {
+  width: fit-content;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.representation-lineage .is-fire3d span,
+.representation-lineage .is-fire3d strong {
+  color: var(--green-dark);
+}
+
+.lineage-step {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  padding: 0 12px;
+  color: var(--muted);
+}
+
+.lineage-step span {
+  font-size: 7px;
+  white-space: nowrap;
+}
+
+.lineage-step b {
+  color: var(--green);
+  font-size: 18px;
+  font-weight: 500;
 }
 
 .mechanism-facts {
@@ -660,6 +746,102 @@ select {
   margin-top: 3px;
   color: var(--muted);
   font-size: 9px;
+}
+
+.vae-ablation {
+  grid-column: 1 / -1;
+  padding-top: 26px;
+  border-top: 1px solid var(--line-dark);
+}
+
+.vae-ablation-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 15px;
+}
+
+.vae-ablation-head span {
+  color: var(--green-dark);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.vae-ablation-head h4 {
+  margin: 3px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.vae-ablation-head p {
+  max-width: 350px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: right;
+}
+
+.vae-table-wrap {
+  overflow-x: auto;
+  border-top: 1px solid var(--line-dark);
+  border-bottom: 1px solid var(--line-dark);
+}
+
+.vae-table-wrap table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+.vae-table-wrap th,
+.vae-table-wrap td {
+  padding: 9px 12px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+.vae-table-wrap tr > :last-child {
+  border-right: 0;
+}
+
+.vae-table-wrap tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.vae-table-wrap thead th {
+  color: var(--muted);
+  background: #eceee9;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.vae-table-wrap tbody th {
+  min-width: 190px;
+  text-align: left;
+}
+
+.vae-table-wrap tbody th span {
+  display: block;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.vae-table-wrap tbody tr.is-fire3d {
+  background: #e7f3ed;
+}
+
+.vae-table-wrap tbody tr.is-fire3d th,
+.vae-table-wrap tbody tr.is-fire3d th span {
+  color: var(--green-dark);
 }
 
 code {
@@ -773,6 +955,15 @@ code {
   width: 100%;
   height: 100%;
   touch-action: none;
+  cursor: grab;
+}
+
+.viewer-stage.has-selectable-assets #scene-canvas {
+  cursor: pointer;
+}
+
+#scene-canvas:active {
+  cursor: grabbing;
 }
 
 .viewer-topbar,
@@ -815,6 +1006,19 @@ code {
 .viewer-topbar span {
   color: var(--muted);
   font-size: 10px;
+}
+
+.viewer-topbar .viewer-selection {
+  width: fit-content;
+  margin-top: 4px;
+  padding: 2px 5px;
+  color: var(--green-dark);
+  background: #e2f3eb;
+  border: 1px solid #b7dccb;
+  border-radius: 2px;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .viewer-reset {
@@ -969,6 +1173,11 @@ code {
 }
 
 .swatch-rgb { background: #f0eee4; }
+.swatch-camera {
+  border: 2px solid var(--green-dark);
+  border-radius: 1px;
+  background: transparent;
+}
 .swatch-instance { background: var(--cyan); }
 .swatch-box { background: var(--coral); }
 .swatch-mesh { background: var(--green); }
@@ -1123,8 +1332,8 @@ code {
   margin: 0;
 }
 
-.native-panel-grid a,
-.native-pair-grid a {
+.native-panel-grid .result-media,
+.native-pair-grid .result-media {
   display: block;
   overflow: hidden;
   border: 1px solid #d9dcd6;
@@ -1152,10 +1361,17 @@ code {
   text-align: center;
 }
 
-.native-panel-grid figure.is-fire3d a,
-.native-pair-grid figure.is-fire3d a {
+.native-panel-grid figure.is-fire3d .result-media,
+.native-pair-grid figure.is-fire3d .result-media {
   border-color: var(--green);
   box-shadow: inset 0 -3px 0 var(--green);
+}
+
+.results-section img,
+.comparisons-section img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .native-panel-grid figure.is-fire3d figcaption,
@@ -1656,6 +1872,17 @@ footer {
     padding-top: 52px;
   }
 
+  .vae-ablation-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vae-ablation-head p {
+    max-width: 520px;
+    text-align: left;
+  }
+
   .explorer-controls {
     grid-template-columns: 1fr;
   }
@@ -1773,6 +2000,26 @@ footer {
 
   .layer-panel {
     grid-template-columns: 1fr;
+  }
+
+  .representation-lineage {
+    grid-template-columns: 1fr;
+  }
+
+  .representation-lineage > div.is-fire3d {
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .lineage-step {
+    grid-auto-flow: column;
+    justify-content: start;
+    padding: 8px 0;
+  }
+
+  .lineage-step b {
+    transform: rotate(90deg);
   }
 
   .comparison-tabs button {
