@@ -90,10 +90,10 @@ export const PAPER_RESULTS = {
   "oracle-reconstruction": {
     group: "oracle_reconstruction",
     scenes: [
-      { id: "ithor_floorplan24", label: "iTHOR · FloorPlan 24" },
-      { id: "ithor_floorplan306", label: "iTHOR · FloorPlan 306" },
       { id: "imaginarium_bedroom01", label: "Imaginarium · Bedroom 01" },
       { id: "imaginarium_bedroom17", label: "Imaginarium · Bedroom 17" },
+      { id: "ithor_floorplan24", label: "iTHOR · FloorPlan 24" },
+      { id: "ithor_floorplan306", label: "iTHOR · FloorPlan 306" },
     ],
     views: [1, 2],
     showAllViews: true,
@@ -113,10 +113,10 @@ export const PAPER_RESULTS = {
   "end-to-end": {
     group: "end_to_end",
     scenes: [
-      { id: "ithor_floorplan312", label: "iTHOR · FloorPlan 312" },
-      { id: "ithor_floorplan328", label: "iTHOR · FloorPlan 328" },
       { id: "imaginarium_bedroom35", label: "Imaginarium · Bedroom 35" },
       { id: "imaginarium_computerroom03", label: "Imaginarium · Computer Room 03" },
+      { id: "ithor_floorplan312", label: "iTHOR · FloorPlan 312" },
+      { id: "ithor_floorplan328", label: "iTHOR · FloorPlan 328" },
     ],
     views: [1, 2],
     showAllViews: true,
