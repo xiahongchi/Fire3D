@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.idea/
+.vscode/
+node_modules/
+playwright-report/
+test-results/
+screenshots/
+temp_scripts/
+

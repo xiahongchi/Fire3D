@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f6f2">
+    <meta
+      name="description"
+      content="Fire3D reconstructs interactive, object-compositional 3D scenes from a single image or casual RGB video in under a minute."
+    >
+    <meta property="og:title" content="FIRE3D: Feed-forward Interactive 3D Scene Reconstruction">
+    <meta property="og:description" content="Simulation-ready 3D scenes from images and video, in under a minute.">
+    <meta property="og:image" content="assets/teaser_v3.png">
+    <title>FIRE3D</title>
+    <link rel="preconnect" href="https://huggingface.co">
+    <link rel="stylesheet" href="assets/css/site.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./assets/vendor/three/three.module.min.js",
+          "three/addons/": "./assets/vendor/three/addons/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-header>
+      <nav class="nav-shell" aria-label="Primary navigation">
+        <a class="wordmark" href="#top" aria-label="Fire3D home">
+          <span class="wordmark-mark" aria-hidden="true">F</span>
+          <span>FIRE3D</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-links" data-nav-toggle>
+          <span></span><span></span><span></span>
+          <span class="sr-only">Toggle navigation</span>
+        </button>
+        <div class="nav-links" id="site-links" data-nav-links>
+          <a href="#method">Method</a>
+          <a href="#explorer">3D Explorer</a>
+          <a href="#results">Results</a>
+          <a href="#comparisons">Comparisons</a>
+          <a href="#citation">Citation</a>
+        </div>
+        <a class="nav-code" href="https://github.com/xiahongchi/Fire3D">Code</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-inner">
+          <p class="venue-line">Interactive 3D scene reconstruction</p>
+          <h1><span aria-hidden="true">🔥</span> <span>FIRE3D</span>: Feed-forward Interactive 3D Scene Reconstruction Within A Minute</h1>
+          <p class="hero-summary">
+            From an <strong>unsegmented image or casual video</strong>, one feed-forward system
+            <strong>discovers the objects and estimates their 6-DoF poses</strong>, then reconstructs
+            <strong>complete textured assets in under a minute</strong>.
+          </p>
+          <div class="authors" aria-label="Paper authors">
+            <a href="https://xiahongchi.github.io/">Hongchi Xia<sup>1</sup></a>
+            <a href="https://tianhang-cheng.github.io/">Tianhang Cheng<sup>1</sup></a>
+            <a href="https://www.cs.cornell.edu/~weichiu/">Wei-Chiu Ma<sup>2</sup></a>
+            <a href="https://shenlong.web.illinois.edu/">Shenlong Wang<sup>1</sup></a>
+          </div>
+          <p class="affiliations"><sup>1</sup> University of Illinois Urbana-Champaign <span></span> <sup>2</sup> Cornell University</p>
+          <div class="hero-actions" aria-label="Project resources">
+            <a class="button button-primary" href="https://github.com/xiahongchi/Fire3D">Code</a>
+            <a class="button" href="https://huggingface.co/hongchi/Fire3D">Models</a>
+            <a class="button" href="https://huggingface.co/datasets/hongchi/Fire3D">Inference data</a>
+          </div>
+        </div>
+        <figure class="hero-figure">
+          <img src="assets/teaser_v3.png" alt="Fire3D reconstructs object-compositional, textured indoor scenes from visual observations.">
+          <figcaption>
+            <strong>No supplied object masks, boxes, poses, or prompts.</strong> Fire3D predicts the scene decomposition and
+            reconstructs <strong>complete, textured, independently editable assets</strong>, including the <strong>room background</strong>.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="positioning-band" aria-labelledby="positioning-title">
+        <div class="section-shell positioning-intro">
+          <p class="section-kicker">The missing capability</p>
+          <h2 id="positioning-title">What other pipelines ask you to provide, Fire3D learns to predict.</h2>
+          <p>
+            Strong 3D methods usually solve one part of the scene problem. Perception systems stop at boxes and
+            masks. Object generators start after an object has been selected. Optimization-based systems recover
+            a scene, but pay a new optimization cost for every capture. Fire3D closes these stages in one learned,
+            feed-forward system.
+          </p>
+        </div>
+
+        <div class="section-shell contribution-ledger" aria-label="Fire3D contributions">
+          <article>
+            <span>01 / Joint perception</span>
+            <h3>No object poses and segmentations input.</h3>
+            <p>
+              The user supplies an RGB image or casual video. Pi3 estimates point maps and camera poses; Fire3D
+              predicts the object count, 3D masks, oriented boxes, and 6-DoF poses without supplied masks, boxes,
+              object poses, or prompts.
+            </p>
+          </article>
+          <article>
+            <span>02 / Complete output</span>
+            <h3>Simulation-ready scene, not a rendering field.</h3>
+            <p>
+              Every predicted entity becomes an amodally complete mesh with PBR appearance in the metric scene.
+              Foreground objects remain independently transformable, while structural surfaces are reconstructed
+              as a background instance.
+            </p>
+          </article>
+          <article>
+            <span>03 / Scene-scale generation</span>
+            <h3>A scene is processed as a batch of objects.</h3>
+            <p>
+              HC-VAE compresses each shape and material field by 32&times;, allowing flow sampling, VAE decoding,
+              and mesh conversion to run across as many as 16 objects in parallel on one GPU, without test-time
+              optimization.
+            </p>
+          </article>
+        </div>
+
+        <div class="section-shell research-landscape">
+          <div class="landscape-heading">
+            <p class="section-kicker">Positioning</p>
+            <h3>One system spans perception, completion, appearance, and scene assembly.</h3>
+            <p>Representative methods are grouped by the part of the problem they are designed to solve.</p>
+          </div>
+          <div class="landscape-table" role="table" aria-label="Fire3D and representative prior method families">
+            <div class="landscape-row landscape-header" role="row">
+              <span role="columnheader">Method family</span>
+              <span role="columnheader">Primary strength</span>
+              <span role="columnheader">Missing or external stage</span>
+              <span role="columnheader">Scene-level outcome</span>
+            </div>
+            <div class="landscape-row" role="row">
+              <span role="cell"><strong>Scene perception</strong><small><a href="https://www.projectaria.com/scenescript/">SceneScript</a> · <a href="https://github.com/facebookresearch/efm3d">EFM3D</a> · <a href="https://arxiv.org/abs/2604.05212">Boxer</a></small></span>
+              <span role="cell">Boxes, masks, layouts</span>
+              <span role="cell">Complete geometry and material</span>
+              <span role="cell">Scene understanding, not editable assets</span>
+            </div>
+            <div class="landscape-row" role="row">
+              <span role="cell"><strong>Selected-object generation</strong><small><a href="https://ai.meta.com/research/publications/sam-3d-3dfy-anything-in-images/">SAM 3D Objects</a> · <a href="https://arxiv.org/abs/2601.11514">ShapeR</a> · <a href="https://microsoft.github.io/TRELLIS.2/">TRELLIS.2</a></small></span>
+              <span role="cell">Amodal object reconstruction</span>
+              <span role="cell">Object selection, masks, detection, or per-object preprocessing</span>
+              <span role="cell">Strong objects; scene decomposition remains external</span>
+            </div>
+            <div class="landscape-row" role="row">
+              <span role="cell"><strong>Per-scene optimization</strong><small><a href="https://github.com/xiahongchi/HoloScene">HoloScene</a> · <a href="https://arxiv.org/abs/2603.02133">SimRecon</a></small></span>
+              <span role="cell">Object-compositional scenes</span>
+              <span role="cell">Search, fitting, or iterative refinement for each capture</span>
+              <span role="cell">Editable scenes at minutes-to-hours cost</span>
+            </div>
+            <div class="landscape-row landscape-fire3d" role="row">
+              <span role="cell"><strong>Fire3D</strong><small>Single image or casual video</small></span>
+              <span role="cell">Joint instance perception and reconstruction</span>
+              <span role="cell">No object-level perception input; no per-scene optimization</span>
+              <span role="cell">Complete textured foreground and background in under 60 seconds</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-shell method-section" id="method" aria-labelledby="method-title">
+        <div class="section-heading">
+          <p class="section-kicker">Method</p>
+          <h2 id="method-title">A single learned path from observations to simulation-ready 3D scenes.</h2>
+          <p>
+            Fire3D lifts visual evidence into 3D, predicts the scene decomposition, completes each entity in a
+            canonical frame, and places the reconstructed assets back into their predicted metric layout.
+          </p>
+        </div>
+        <figure class="paper-figure method-figure">
+          <img src="assets/method_overview.png" alt="Fire3D network architecture from RGB-D observations through scene perception and object reconstruction.">
+          <figcaption><strong>Unified perception and reconstruction.</strong> Predicted instance point clouds condition cascaded sparse-structure, shape, and PBR flow models; decoded assets are assembled with the predicted object poses.</figcaption>
+        </figure>
+        <div class="method-evidence" aria-label="Fire3D method stages">
+          <div><span>Perceive</span><p>DINOv3 features are lifted into a shared 3D representation that predicts validity, instance masks, oriented extent, and 6-DoF pose.</p></div>
+          <div><span>Complete</span><p>Canonicalized instance points condition structure, shape, and material flows, completing unseen geometry rather than meshing only observed surfaces.</p></div>
+          <div><span>Assemble</span><p>Complete textured meshes are transformed back into the world frame as physically decoupled foreground assets and a static background instance.</p></div>
+        </div>
+        <div class="hcvae-layout">
+          <div class="hcvae-copy">
+            <p class="section-kicker">Why a full room fits</p>
+            <h3>HC-VAE makes multi-object generation a scene operation.</h3>
+            <p>
+              Our HC-VAE compresses TRELLIS.2 shape and material fields from a sparse <code>32³ × 32</code>
+              representation into <code>8³ × 64</code> latents. This changes the practical unit of inference from one
+              selected object to a batch of scene entities while preserving geometry and appearance quality.
+            </p>
+            <dl class="mechanism-facts">
+              <div><dt>Object code</dt><dd><strong>256 KB</strong><span>shape and material latents</span></dd></div>
+              <div><dt>Compression</dt><dd><strong>32&times;</strong><span>beyond the SC-VAE latent</span></dd></div>
+              <div><dt>Inference batch</dt><dd><strong>16 objects</strong><span>on one 80 GB A100</span></dd></div>
+              <div><dt>End to end</dt><dd><strong>&lt; 60 s</strong><span>60 frames, more than 12 instances</span></dd></div>
+            </dl>
+          </div>
+          <figure class="paper-figure hcvae-figure">
+            <img src="assets/hcvae.png" alt="The Fire3D hierarchical compression VAE architecture.">
+            <figcaption><strong>Hierarchical compression for shape and material.</strong> Lightweight sparse 3D encoders compress expressive SC-VAE fields into compact latents for batched flow matching and decoding.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="explorer-band" id="explorer" aria-labelledby="explorer-title">
+        <div class="section-shell">
+          <div class="section-heading explorer-heading">
+            <p class="section-kicker">Interactive 3D Explorer</p>
+            <h2 id="explorer-title">Inspect the observations, perception, and reconstruction.</h2>
+            <p>
+              Eight held-out scenes are presented in the shared reconstruction coordinate frame. Switch layers to
+              inspect the evidence, predicted instances and boxes, or the final assets.
+            </p>
+          </div>
+
+          <div class="explorer-controls" aria-label="3D scene controls">
+            <div class="control-group">
+              <span class="control-label">Dataset</span>
+              <div class="segmented" role="group" aria-label="Dataset">
+                <button type="button" class="is-active" data-dataset="ithor" aria-pressed="true">iTHOR</button>
+                <button type="button" data-dataset="imaginarium" aria-pressed="false">Imaginarium</button>
+              </div>
+            </div>
+            <div class="control-group scene-control">
+              <label class="control-label" for="scene-select">Scene</label>
+              <select id="scene-select" data-scene-select></select>
+            </div>
+            <div class="control-group mode-control">
+              <span class="control-label">View</span>
+              <div class="segmented" role="group" aria-label="Visualization mode">
+                <button type="button" class="is-active" data-mode="input" aria-pressed="true">RGB input</button>
+                <button type="button" data-mode="perception" aria-pressed="false">Perception</button>
+                <button type="button" data-mode="reconstruction" aria-pressed="false">Reconstruction</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="viewer-shell">
+            <div class="viewer-stage" data-viewer-stage>
+              <canvas id="scene-canvas" aria-label="Interactive Fire3D scene viewer"></canvas>
+              <div class="viewer-topbar">
+                <div>
+                  <strong data-viewer-scene>FloorPlan 312</strong>
+                  <span data-viewer-mode>RGB input point cloud</span>
+                </div>
+                <button type="button" class="viewer-reset" data-viewer-reset>Reset view</button>
+              </div>
+              <div class="viewer-status" data-viewer-status role="status" aria-live="polite">
+                <span data-status-copy>Loading scene</span>
+                <span class="load-track"><span data-load-progress></span></span>
+              </div>
+            </div>
+            <aside class="layer-panel" aria-label="Scene layers">
+              <div class="layer-panel-head">
+                <span>Layers</span>
+                <button type="button" data-layer-clear>Clear</button>
+              </div>
+              <label><input type="checkbox" data-layer="rgb" checked><span class="layer-swatch swatch-rgb"></span><span><strong>RGB point cloud</strong><small>Fused visual observations</small></span></label>
+              <label><input type="checkbox" data-layer="instances"><span class="layer-swatch swatch-instance"></span><span><strong>Instances</strong><small>Predicted 3D segmentation</small></span></label>
+              <label><input type="checkbox" data-layer="obbs"><span class="layer-swatch swatch-box"></span><span><strong>Oriented boxes</strong><small>6-DoF object pose</small></span></label>
+              <label><input type="checkbox" data-layer="foreground"><span class="layer-swatch swatch-mesh"></span><span><strong>Foreground assets</strong><small>Complete textured objects</small></span></label>
+              <label><input type="checkbox" data-layer="background"><span class="layer-swatch swatch-room"></span><span><strong>Background</strong><small>Room reconstruction, off by default</small></span></label>
+              <label class="autorotate-control"><input type="checkbox" data-auto-rotate checked><span><strong>Auto rotate</strong><small>Pause while interacting</small></span></label>
+            </aside>
+          </div>
+
+          <div class="observation-strip" aria-label="Selected RGB observations">
+            <div class="strip-heading">
+              <span>RGB observations</span>
+              <small>Sampled from the posed input sequence</small>
+            </div>
+            <div class="frame-grid" data-frame-grid></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-shell results-section" id="results" aria-labelledby="results-title">
+        <div class="section-heading">
+          <p class="section-kicker">Evidence</p>
+          <h2 id="results-title">The complete task, tested one claim at a time.</h2>
+          <p>
+            Each full-width comparison isolates a different requirement: perception, object completion,
+            end-to-end reconstruction, single-image transfer, and cross-dataset generalization.
+          </p>
+        </div>
+        <div class="results-stack">
+          <article class="paper-result" data-paper-result="perception">
+            <header class="paper-result-head">
+              <div><span>Scene decomposition</span><h3>Discovering objects directly from unsegmented observations</h3></div>
+              <div class="paper-result-controls" data-paper-controls></div>
+            </header>
+            <div class="native-panel-grid" data-paper-grid></div>
+            <p class="paper-result-caption">Fire3D predicts oriented boxes and instance masks rather than receiving them. Green boxes are correct predictions, red boxes are poorly localized predictions, and orange boxes are missed ground-truth objects.</p>
+          </article>
+          <article class="paper-result" data-paper-result="oracle-reconstruction">
+            <header class="paper-result-head">
+              <div><span>Controlled reconstruction study</span><h3>Amodal assets from matched ground-truth perception</h3></div>
+              <div class="paper-result-controls" data-paper-controls></div>
+            </header>
+            <div class="native-panel-grid" data-paper-grid></div>
+            <p class="paper-result-caption">All methods receive the same ground-truth instances and poses, isolating reconstruction quality. Fire3D recovers complete geometry and texture from native 3D conditions, while ShapeR is geometry-only and SAM 3D Objects is adapted from its single-view setting.</p>
+          </article>
+          <article class="paper-result" data-paper-result="end-to-end">
+            <header class="paper-result-head">
+              <div><span>End-to-end scene reconstruction</span><h3>No masks, boxes, object poses, or known object count</h3></div>
+              <div class="paper-result-controls" data-paper-controls></div>
+            </header>
+            <div class="native-panel-grid" data-paper-grid></div>
+            <p class="paper-result-caption">The methods receive the same visual capture. Fire3D performs its own perception and reconstructs textured assets in their predicted scene layout; the EFM3D + ShapeR pipeline composes separate detection and geometry stages.</p>
+          </article>
+          <article class="paper-result" data-paper-result="single-image">
+            <header class="paper-result-head">
+              <div><span>Single-image transfer</span><h3>Automatic scene decomposition and reconstruction from one view</h3></div>
+              <div class="paper-result-controls" data-paper-controls></div>
+            </header>
+            <div class="native-panel-grid" data-paper-grid></div>
+            <p class="paper-result-caption">A single RGB image and its estimated point map are sufficient for Fire3D to discover and reconstruct the scene objects automatically, without user clicks or masks.</p>
+          </article>
+          <article class="paper-result" data-paper-result="generalization">
+            <header class="paper-result-head">
+              <div><span>Generalization</span><h3>Complete foreground and background across unseen scene domains</h3></div>
+            </header>
+            <div class="native-pair-grid" data-paper-grid></div>
+            <p class="paper-result-caption">One model reconstructs object-compositional scenes across synthetic environments and realistic captures, including the complete predicted background instance.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="video-band" id="applications" aria-labelledby="applications-title">
+        <div class="section-shell">
+          <div class="section-heading">
+            <p class="section-kicker">Interactive Applications</p>
+            <h2 id="applications-title">Reconstructed once. Used as real scene assets.</h2>
+            <p>Object-level meshes support interaction, robotics, and visual effects without a separate scene conversion step.</p>
+          </div>
+          <div class="video-grid">
+            <figure>
+              <video controls muted autoplay loop playsinline preload="metadata" data-video="dynamic"></video>
+              <figcaption><strong>Dynamic VFX</strong><span>Scene-aware effects interact with reconstructed geometry.</span></figcaption>
+            </figure>
+            <figure>
+              <video controls muted autoplay loop playsinline preload="metadata" data-video="robotics"></video>
+              <figcaption><strong>Robotics</strong><span>Object-compositional assets enable embodied interaction.</span></figcaption>
+            </figure>
+            <figure>
+              <video controls muted autoplay loop playsinline preload="metadata" data-video="gaming"></video>
+              <figcaption><strong>Gaming</strong><span>Complete scene elements remain editable and transformable.</span></figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-shell comparisons-section" id="comparisons" aria-labelledby="comparisons-title">
+        <div class="section-heading">
+          <p class="section-kicker">Nearest alternatives</p>
+          <h2 id="comparisons-title">Where the unified design changes the trade-off.</h2>
+          <p>Matched views test Fire3D against optimization-based reconstruction, scene perception, object completion, and a composed detector-to-generator pipeline.</p>
+        </div>
+        <div class="comparison-tabs" role="tablist" aria-label="Comparison method">
+          <button type="button" class="is-active" role="tab" aria-selected="true" data-comparison-tab="holoscene">HoloScene</button>
+          <button type="button" role="tab" aria-selected="false" data-comparison-tab="simrecon">SimRecon</button>
+          <button type="button" role="tab" aria-selected="false" data-comparison-tab="litereality">LiteReality</button>
+          <button type="button" role="tab" aria-selected="false" data-comparison-tab="composed">Composed pipeline</button>
+        </div>
+
+        <article class="comparison-panel is-active" data-comparison-panel="holoscene">
+          <div class="comparison-head">
+            <div>
+              <h3>Optimization-based scene reconstruction</h3>
+              <p>Fire3D reconstructs a scene in about one minute; HoloScene requires approximately eight hours.</p>
+            </div>
+            <div class="comparison-nav">
+              <select aria-label="HoloScene comparison dataset" data-holoscene-dataset>
+                <option value="scene">Scene</option>
+                <option value="igibson">iGibson</option>
+              </select>
+              <button type="button" aria-label="Previous comparison view" data-holoscene-prev>&larr;</button>
+              <span data-holoscene-index>View 1 / 16</span>
+              <button type="button" aria-label="Next comparison view" data-holoscene-next>&rarr;</button>
+            </div>
+          </div>
+          <div class="panel-grid panel-grid-3" data-holoscene-grid></div>
+        </article>
+
+        <article class="comparison-panel" data-comparison-panel="simrecon" hidden>
+          <div class="comparison-head">
+            <div>
+              <h3>3D scene perception</h3>
+              <p>Correct predictions are green, poorly localized predictions are red, and missed ground-truth boxes are orange.</p>
+            </div>
+            <span class="metric-note">3D IoU threshold 0.25</span>
+          </div>
+          <div class="panel-grid panel-grid-3" data-simrecon-grid></div>
+        </article>
+
+        <article class="comparison-panel" data-comparison-panel="litereality" hidden>
+          <div class="comparison-head">
+            <div>
+              <h3>Object reconstruction with matched perception</h3>
+              <p>Instance-color geometry uses the same white-background rendering protocol for all methods.</p>
+            </div>
+            <span class="metric-note">7.46× faster per object</span>
+          </div>
+          <div class="panel-grid panel-grid-3" data-litereality-grid></div>
+        </article>
+
+        <article class="comparison-panel" data-comparison-panel="composed" hidden>
+          <div class="comparison-head">
+            <div>
+              <h3>End-to-end modular baseline</h3>
+              <p>Boxer, SAM2, and TRELLIS.2 are composed into a direct modular baseline on the same input scenes.</p>
+            </div>
+            <div class="comparison-nav">
+              <select aria-label="Composed pipeline scene" data-composed-scene></select>
+            </div>
+          </div>
+          <div class="panel-grid panel-grid-3" data-composed-grid></div>
+        </article>
+      </section>
+
+      <section class="release-band" aria-labelledby="release-title">
+        <div class="section-shell release-layout">
+          <div>
+            <p class="section-kicker">Open Release</p>
+            <h2 id="release-title">Reproduce the complete pipeline.</h2>
+            <p>
+              The release includes frozen inference protocols, model checkpoints, processed examples for four input
+              domains, camera sampling, and physically based scene rendering.
+            </p>
+          </div>
+          <div class="release-links">
+            <a href="https://github.com/xiahongchi/Fire3D"><strong>Code</strong><span>Installation and unified inference</span></a>
+            <a href="https://huggingface.co/hongchi/Fire3D"><strong>Models</strong><span>Perception, flow, and VAE checkpoints</span></a>
+            <a href="https://huggingface.co/datasets/hongchi/Fire3D"><strong>Data</strong><span>Ready-to-run example inputs</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-shell citation-section" id="citation" aria-labelledby="citation-title">
+        <div class="section-heading">
+          <p class="section-kicker">Citation</p>
+          <h2 id="citation-title">Reference Fire3D.</h2>
+        </div>
+        <div class="citation-box">
+          <pre><code>@misc{xia2026fire3d,
+  title  = {FIRE3D: Feed-forward Interactive 3D Scene Reconstruction Within A Minute},
+  author = {Xia, Hongchi and Cheng, Tianhang and Ma, Wei-Chiu and Wang, Shenlong},
+  year   = {2026}
+}</code></pre>
+          <button type="button" data-copy-citation>Copy BibTeX</button>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="section-shell footer-inner">
+        <span>FIRE3D</span>
+        <p>Feed-forward reconstruction for interactive 3D scenes.</p>
+        <a href="mailto:hongchix@illinois.edu">hongchix@illinois.edu</a>
+      </div>
+    </footer>
+
+    <script type="module" src="assets/js/site.js"></script>
+    <script type="module" src="assets/js/viewer.js"></script>
+  </body>
+</html>
