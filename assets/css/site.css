@@ -1831,6 +1831,36 @@ code {
   cursor: pointer;
 }
 
+.acknowledgment-band {
+  padding: 66px 0;
+  border-top: 1px solid var(--line);
+  background: var(--paper-strong);
+}
+
+.acknowledgment-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.42fr) minmax(500px, 1.58fr);
+  gap: 80px;
+  align-items: start;
+}
+
+.acknowledgment-layout h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.08;
+  font-weight: 500;
+}
+
+.acknowledgment-copy {
+  margin: 0;
+  padding-left: 24px;
+  border-left: 3px solid var(--green);
+  color: #3f4745;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
 footer {
   padding: 28px 0;
   border-top: 1px solid var(--line);
@@ -1901,7 +1931,8 @@ footer {
 
   .hcvae-layout,
   .release-layout,
-  .citation-section {
+  .citation-section,
+  .acknowledgment-layout {
     gap: 42px;
   }
 
@@ -2024,7 +2055,8 @@ footer {
   .citation-section,
   .video-band,
   .explorer-band,
-  .release-band {
+  .release-band,
+  .acknowledgment-band {
     padding-top: 72px;
     padding-bottom: 72px;
   }
@@ -2033,9 +2065,14 @@ footer {
   .landscape-heading,
   .hcvae-layout,
   .release-layout,
-  .citation-section {
+  .citation-section,
+  .acknowledgment-layout {
     grid-template-columns: 1fr;
     gap: 32px;
+  }
+
+  .acknowledgment-copy {
+    padding-left: 18px;
   }
 
   .contribution-ledger,
