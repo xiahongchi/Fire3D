@@ -121,6 +121,9 @@ export const SCENES = {
 };
 
 export const VIDEOS = {
+  launch: [
+    { src: "./assets/fire3d_launch.mp4", type: "video/mp4" },
+  ],
   dynamic: [
     { src: `${HF_ASSET_ROOT}/media/fire3d_dynamic_vfx.webm`, type: "video/webm" },
     { src: `${HF_ASSET_ROOT}/media/fire3d_dynamic_vfx.mp4`, type: "video/mp4" },
