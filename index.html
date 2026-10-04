@@ -6,14 +6,14 @@
     <meta name="theme-color" content="#f5f6f2">
     <meta
       name="description"
-      content="Fire3D reconstructs interactive, object-compositional 3D scenes from a single image or casual RGB video in under a minute."
+      content="Fire3D reconstructs independently editable 3D assets from an RGB image or video: up to twelve textured instances in under a minute, including preprocessing."
     >
     <meta property="og:title" content="FIRE3D: Feed-forward Interactive 3D Scene Reconstruction">
-    <meta property="og:description" content="Simulation-ready 3D scenes from images and video, in under a minute.">
-    <meta property="og:image" content="assets/teaser_v3.png">
+    <meta property="og:description" content="Interactable 3D assets from images and video, in under a minute for up to twelve textured instances including preprocessing.">
+    <meta property="og:image" content="assets/teaser_v10.jpg">
     <title>FIRE3D</title>
     <link rel="preconnect" href="https://huggingface.co">
-    <link rel="stylesheet" href="assets/css/site.css">
+    <link rel="stylesheet" href="assets/css/site.css?v=paper-v10">
     <script type="importmap">
       {
         "imports": {
@@ -64,7 +64,8 @@
           </div>
           <p class="affiliations"><sup>1</sup> University of Illinois Urbana-Champaign <span></span> <sup>2</sup> Cornell University</p>
           <div class="hero-actions" aria-label="Project resources">
-            <a class="button button-primary" href="https://github.com/xiahongchi/Fire3D">Code</a>
+            <a class="button" href="https://arxiv.org/pdf/2609.08848">Paper</a>
+            <a class="button" href="https://github.com/xiahongchi/Fire3D">Code</a>
             <a class="button" href="https://huggingface.co/hongchi/Fire3D">Models</a>
             <a class="button" href="https://huggingface.co/datasets/hongchi/Fire3D">Inference data</a>
           </div>
@@ -85,16 +86,22 @@
           </div>
           <figcaption id="hero-film-caption">
             <span>31-second overview</span>
-            <strong>From unsegmented observations to simulation-ready 3D scene assets.</strong>
+            <strong>From unsegmented observations to independently editable 3D scene assets.</strong>
           </figcaption>
         </figure>
         <figure class="hero-figure">
-          <img src="assets/teaser_v3.png" alt="Fire3D reconstructs object-compositional, textured indoor scenes from visual observations.">
+          <img src="assets/teaser_v10.jpg" alt="Fire3D reconstructs object-compositional, textured indoor scenes from visual observations.">
           <figcaption>
             <strong>No supplied object masks, boxes, poses, or prompts.</strong> Fire3D predicts the scene decomposition and
             reconstructs <strong>complete, textured, independently editable assets</strong>, including the <strong>room background</strong>.
           </figcaption>
         </figure>
+      </section>
+
+      <section class="section-shell abstract-section" id="abstract" aria-labelledby="abstract-title">
+        <p class="section-kicker">The paper</p>
+        <h2 id="abstract-title">Abstract</h2>
+        <p>We present FIRE3D, a unified framework that transforms a single RGB image or casual video into interactable 3D scene assets for games and interactive applications in under a minute for up to twelve textured instances including preprocessing. At the core of FIRE3D is a feed-forward inference pipeline that predicts a compositional scene representation from posed RGB-D observations estimated from the RGB capture, including the 6-DoF pose, bounding box, mesh, and texture for detected objects. By modeling the scene as a collection of discrete entities, FIRE3D produces amodal object assets that can be independently edited and used in interactive applications. Our framework requires no test-time optimization, runs substantially faster than the compared reconstruction systems, and provides object-level completeness beyond existing feed-forward 3D approaches. We demonstrate leading detection accuracy, strong geometry reconstruction, and competitive rendering quality on the evaluated benchmarks, with substantial runtime gains.</p>
       </section>
 
       <section class="positioning-band" aria-labelledby="positioning-title">
@@ -112,16 +119,16 @@
         <div class="section-shell contribution-ledger" aria-label="Fire3D contributions">
           <article>
             <span>01 / Joint perception</span>
-            <h3>No object poses and segmentations input.</h3>
+            <h3>No supplied object poses or segmentations.</h3>
             <p>
-              The user supplies an RGB image or casual video. Pi3 estimates point maps and camera poses; Fire3D
+              The user supplies an RGB image or casual video. Pi3X, the Pi3 variant used in Fire3D, estimates point maps and camera poses; Fire3D
               predicts the object count, 3D masks, oriented boxes, and 6-DoF poses without supplied masks, boxes,
               object poses, or prompts.
             </p>
           </article>
           <article>
             <span>02 / Complete output</span>
-            <h3>Simulation-ready scene, not a rendering field.</h3>
+            <h3>Complete, independently editable scene assets.</h3>
             <p>
               Every predicted entity becomes an amodally complete mesh with PBR appearance in the metric scene.
               Foreground objects remain independently transformable, while structural surfaces are reconstructed
@@ -132,9 +139,9 @@
             <span>03 / Scene-scale generation</span>
             <h3>A scene is processed as a batch of objects.</h3>
             <p>
-              HC-VAE compresses each shape and material field by 32&times;, allowing flow sampling, VAE decoding,
+              HC-VAE reduces nominal latent feature capacity by 32&times;, allowing flow sampling, VAE decoding,
               and mesh conversion to run across as many as 16 objects in parallel on one GPU, without test-time
-              optimization.
+              optimization. Generation uses a fixed 12-step flow-sampling schedule.
             </p>
           </article>
         </div>
@@ -174,7 +181,7 @@
               <span role="cell"><strong>Fire3D</strong><small>Single image or casual video</small></span>
               <span role="cell">Joint instance perception and reconstruction</span>
               <span role="cell">No object-level perception input; no per-scene optimization</span>
-              <span role="cell">Complete textured foreground and background in under 60 seconds</span>
+              <span role="cell">Up to twelve textured instances, including background, in under 60 seconds</span>
             </div>
           </div>
         </div>
@@ -183,7 +190,7 @@
       <section class="section-shell method-section" id="method" aria-labelledby="method-title">
         <div class="section-heading">
           <p class="section-kicker">Method</p>
-          <h2 id="method-title">A single learned path from observations to simulation-ready 3D scenes.</h2>
+          <h2 id="method-title">A single learned path from observations to interactable 3D scenes.</h2>
           <p>
             Fire3D lifts visual evidence into 3D, predicts the scene decomposition, completes each entity in a
             canonical frame, and places the reconstructed assets back into their predicted metric layout.
@@ -196,7 +203,7 @@
         <div class="method-evidence" aria-label="Fire3D method stages">
           <div><span>Perceive</span><p>DINOv3 features are lifted into a shared 3D representation that predicts validity, instance masks, oriented extent, and 6-DoF pose.</p></div>
           <div><span>Complete</span><p>Canonicalized instance points condition structure, shape, and material flows, completing unseen geometry rather than meshing only observed surfaces.</p></div>
-          <div><span>Assemble</span><p>Complete textured meshes are transformed back into the world frame as physically decoupled foreground assets and a static background instance.</p></div>
+          <div><span>Assemble</span><p>Complete textured meshes are transformed back into the world frame as independently editable foreground assets and a static background instance.</p></div>
         </div>
         <div class="hcvae-layout">
           <div class="hcvae-copy">
@@ -221,11 +228,12 @@
               </div>
             </div>
             <dl class="mechanism-facts">
-              <div><dt>Object code</dt><dd><strong>256 KB</strong><span>shape and material latents</span></dd></div>
-              <div><dt>Compression</dt><dd><strong>32&times;</strong><span>beyond the SC-VAE latent</span></dd></div>
+              <div><dt>Object code</dt><dd><strong>256 KiB</strong><span>two float32 grids; sparse metadata excluded</span></dd></div>
+              <div><dt>Compression</dt><dd><strong>32&times;</strong><span>reduction in nominal feature capacity</span></dd></div>
               <div><dt>Inference batch</dt><dd><strong>16 objects</strong><span>on one 80 GB A100</span></dd></div>
-              <div><dt>End to end</dt><dd><strong>&lt; 60 s</strong><span>60 frames, more than 12 instances</span></dd></div>
+              <div><dt>End to end</dt><dd><strong>58.4 s</strong><span>60 frames; 12 instances including background</span></dd></div>
             </dl>
+            <p class="runtime-note">The total includes 1.05 s for Pi3X on 60 frames, feature extraction, and mesh/texture export. Direct end-to-end timing with batch size 12 also completes within one minute.</p>
           </div>
           <figure class="paper-figure hcvae-figure">
             <img src="assets/hcvae.png" alt="The Fire3D hierarchical compression VAE architecture.">
@@ -237,7 +245,7 @@
                 <span>Measured trade-off</span>
                 <h4>32&times; compression with a small reconstruction change</h4>
               </div>
-              <p>Selected geometry and rendering metrics from the paper's VAE comparison.</p>
+              <p>Encoding–decoding quality from Table A6.</p>
             </div>
             <div class="vae-table-wrap">
               <table>
@@ -249,8 +257,8 @@
                     <th colspan="3" scope="colgroup">Imaginarium</th>
                   </tr>
                   <tr>
-                    <th scope="col">CD ↓</th><th scope="col">F1 ↑</th><th scope="col">PSNR ↑</th>
-                    <th scope="col">CD ↓</th><th scope="col">F1 ↑</th><th scope="col">PSNR ↑</th>
+                    <th scope="col">CD (cm) ↓</th><th scope="col">F1 ↑</th><th scope="col">PSNR (dB) ↑</th>
+                    <th scope="col">CD (cm) ↓</th><th scope="col">F1 ↑</th><th scope="col">PSNR (dB) ↑</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -380,8 +388,7 @@
           <p class="section-kicker">Evidence</p>
           <h2 id="results-title">The complete task, tested one claim at a time.</h2>
           <p>
-            Each full-width comparison isolates a different requirement: perception, object completion,
-            end-to-end reconstruction, single-image transfer, and cross-dataset generalization.
+            These comparisons cover perception, object completion, end-to-end reconstruction, single-image transfer, and generalization. Real-world quantitative tests cover AEO perception and ShapeR object geometry; rendering comparisons use synthetic data.
           </p>
         </div>
         <div class="results-stack">
@@ -391,7 +398,7 @@
               <div class="paper-result-controls" data-paper-controls></div>
             </header>
             <div class="native-panel-grid" data-paper-grid></div>
-            <p class="paper-result-caption">Fire3D predicts oriented boxes and instance masks rather than receiving them. Green boxes are correct predictions, red boxes are poorly localized predictions, and orange boxes are missed ground-truth objects.</p>
+            <p class="paper-result-caption">Fire3D leads mAP on all three perception benchmarks and mIoU on iTHOR and Imaginarium. Green boxes are correct predictions, red boxes are incorrect predictions, and orange boxes are missed ground-truth objects.</p>
           </article>
           <article class="paper-result" data-paper-result="oracle-reconstruction">
             <header class="paper-result-head">
@@ -399,7 +406,7 @@
               <div class="paper-result-controls" data-paper-controls></div>
             </header>
             <div class="native-panel-grid" data-paper-grid></div>
-            <p class="paper-result-caption">All methods receive the same ground-truth instances and poses, isolating reconstruction quality. Fire3D recovers complete geometry and texture from native 3D conditions, while ShapeR is geometry-only and SAM 3D Objects is adapted from its single-view setting.</p>
+            <p class="paper-result-caption">All methods receive the same ground-truth instances and poses, isolating reconstruction quality. Fire3D recovers complete geometry and texture from native 3D conditions, while ShapeR is geometry-only and SAM 3D Objects uses each object’s largest-mask input frame. Background is excluded for matched comparisons.</p>
           </article>
           <article class="paper-result" data-paper-result="end-to-end">
             <header class="paper-result-head">
@@ -407,7 +414,7 @@
               <div class="paper-result-controls" data-paper-controls></div>
             </header>
             <div class="native-panel-grid" data-paper-grid></div>
-            <p class="paper-result-caption">The methods receive the same visual capture. Fire3D performs its own perception and reconstructs textured assets in their predicted scene layout; the EFM3D + ShapeR pipeline composes separate detection and geometry stages.</p>
+            <p class="paper-result-caption">The methods receive the same visual capture. Fire3D performs its own perception and reconstructs textured assets in their predicted scene layout; the EFM3D + ShapeR pipeline composes separate detection and geometry stages. Geometry metrics use matched objects; mAP/mIoU account for missed instances.</p>
           </article>
           <article class="paper-result" data-paper-result="single-image">
             <header class="paper-result-head">
@@ -415,14 +422,14 @@
               <div class="paper-result-controls" data-paper-controls></div>
             </header>
             <div class="native-panel-grid" data-paper-grid></div>
-            <p class="paper-result-caption">A single RGB image and its estimated point map are sufficient for Fire3D to discover and reconstruct the scene objects automatically, without user clicks or masks.</p>
+            <p class="paper-result-caption">A single RGB image and its Pi3X-estimated point map are sufficient for automatic reconstruction without user clicks or masks. Geometry evaluation aligns the entire scene with one shared scaling, rotation, and translation.</p>
           </article>
           <article class="paper-result" data-paper-result="generalization">
             <header class="paper-result-head">
-              <div><span>Generalization</span><h3>Complete foreground and background across unseen scene domains</h3></div>
+              <div><span>Generalization</span><h3>Complete foreground and background across diverse scenes</h3></div>
             </header>
             <div class="native-pair-grid" data-paper-grid></div>
-            <p class="paper-result-caption">One model reconstructs object-compositional scenes across synthetic environments and realistic captures, including the complete predicted background instance.</p>
+            <p class="paper-result-caption">All shown scenes and object assets are held out from training, including examples from training-source datasets. One model reconstructs foreground assets and a background instance across these sources; background quality is shown qualitatively.</p>
           </article>
         </div>
       </section>
@@ -432,7 +439,7 @@
           <div class="section-heading">
             <p class="section-kicker">Interactive Applications</p>
             <h2 id="applications-title">Reconstructed once. Used as real scene assets.</h2>
-            <p>Object-level meshes support interaction, robotics, and visual effects without a separate scene conversion step.</p>
+            <p>Independently editable meshes support gaming in Unreal, visual effects in Blender, and robotics demonstrations in IsaacSim/IsaacLab. Systematic evaluation of physical stability and sim-to-real transfer is left to future work.</p>
           </div>
           <div class="video-grid">
             <figure>
@@ -468,7 +475,7 @@
           <div class="comparison-head">
             <div>
               <h3>Optimization-based scene reconstruction</h3>
-              <p>Fire3D reconstructs a scene in about one minute; HoloScene requires approximately eight hours.</p>
+              <p>Fire3D reconstructs a scene in about one minute; HoloScene requires approximately eight hours of optimization alone, excluding preprocessing. Fire3D improves scene-level CD/F1 and object-level CD/F1; HoloScene achieves higher scene-level NC and PSNR.</p>
             </div>
             <div class="comparison-nav">
               <select aria-label="HoloScene comparison dataset" data-holoscene-dataset>
@@ -487,7 +494,7 @@
           <div class="comparison-head">
             <div>
               <h3>3D scene perception</h3>
-              <p>Correct predictions are green, poorly localized predictions are red, and missed ground-truth boxes are orange.</p>
+              <p>On matched 10-scene subsets of iTHOR and Imaginarium, Fire3D improves overall mAP/mIoU at 31.93&times; lower runtime. Green indicates correct predictions, red unmatched predictions, and orange missed objects.</p>
             </div>
             <span class="metric-note">3D IoU threshold 0.25</span>
           </div>
@@ -498,7 +505,7 @@
           <div class="comparison-head">
             <div>
               <h3>Object reconstruction with matched perception</h3>
-              <p>Instance-color geometry uses the same white-background rendering protocol for all methods.</p>
+              <p>Both methods receive GT detection and segmentation on the same scenes. Geometry inference and mesh post-processing take 2.44 s per object for Fire3D versus 18.21 s for LiteReality.</p>
             </div>
             <span class="metric-note">7.46× faster per object</span>
           </div>
@@ -509,7 +516,7 @@
           <div class="comparison-head">
             <div>
               <h3>End-to-end modular baseline</h3>
-              <p>Boxer, SAM2, and TRELLIS.2 are composed into a direct modular baseline on the same input scenes.</p>
+              <p>Boxer, SAM2, and TRELLIS.2 form a modular baseline on 30 Imaginarium scenes. Fire3D improves all reported quality metrics with 6.52&times; faster network inference. This is a system-level comparison.</p>
             </div>
             <div class="comparison-nav">
               <select aria-label="Composed pipeline scene" data-composed-scene></select>
@@ -577,7 +584,7 @@
       </div>
     </footer>
 
-    <script type="module" src="assets/js/site.js"></script>
+    <script type="module" src="assets/js/site.js?v=perception-v9-jpg"></script>
     <script type="module" src="assets/js/viewer.js"></script>
   </body>
 </html>

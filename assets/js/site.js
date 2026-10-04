@@ -8,7 +8,7 @@ import {
   composedAsset,
   literealityAsset,
   simreconAsset,
-} from "./data.js";
+} from "./data.js?v=perception-v9-jpg";
 
 const header = document.querySelector("[data-header]");
 const navToggle = document.querySelector("[data-nav-toggle]");

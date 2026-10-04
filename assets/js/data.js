@@ -148,22 +148,23 @@ export const PAPER_RESULTS = {
   perception: {
     group: "perception",
     scenes: [
-      { id: "iTHOR_FloorPlan206_physics_0", label: "iTHOR · FloorPlan 206" },
-      { id: "iTHOR_FloorPlan219_physics_0", label: "iTHOR · FloorPlan 219" },
-      { id: "ima_bedroom_11_0", label: "Imaginarium · Bedroom 11" },
-      { id: "ima_diningroom_17_0", label: "Imaginarium · Dining Room 17" },
-      { id: "aeo_seq14_740780134182416", label: "AEO · sequence 14" },
       { id: "aeo_seq05_219801130654082", label: "AEO · sequence 05" },
+      { id: "iTHOR_FloorPlan5_physics_0_eye_v1", label: "iTHOR · FloorPlan 5" },
+      { id: "ima_floristshop_02_0", label: "Imaginarium · Florist Shop 02" },
+      { id: "aeo_seq14_740780134182416", label: "AEO · sequence 14" },
+      { id: "iTHOR_FloorPlan328_physics_0_eye_v2", label: "iTHOR · FloorPlan 328" },
+      { id: "ima_kitchen_02_0_eye_v5", label: "Imaginarium · Kitchen 02" },
     ],
     methods: [
-      { id: "ground_truth", label: "Ground truth" },
+      { id: "rgb", label: "Input" },
       { id: "scenescript", label: "SceneScript" },
       { id: "efm3d", label: "EFM3D" },
       { id: "boxer", label: "Boxer" },
       { id: "ours", label: "Fire3D", fire3d: true },
+      { id: "ground_truth", label: "Ground truth" },
     ],
     path(sceneId, methodId) {
-      return paperAsset("perception", `${sceneId}/${methodId}.webp`);
+      return `./assets/content/paper/perception_v9/${sceneId}/${methodId}.jpg`;
     },
   },
   "oracle-reconstruction": {

@@ -178,16 +178,16 @@ select {
 
 .nav-code {
   padding: 8px 15px;
-  color: white;
-  background: var(--ink);
-  border: 1px solid var(--ink);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line-dark);
   border-radius: 4px;
 }
 
 .nav-code:hover,
 .nav-code:focus-visible {
   color: var(--ink);
-  background: transparent;
+  background: white;
 }
 
 .nav-toggle {
@@ -2288,4 +2288,14 @@ footer {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Paper v10 content additions, using the existing typography and table styles. */
+.abstract-section { padding: 64px 0; border-top: 1px solid var(--line); }
+.abstract-section h2 { margin: 8px 0 22px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(30px, 4vw, 44px); font-weight: 500; }
+.abstract-section > p:last-child { max-width: 900px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.75; }
+.hcvae-copy .runtime-note { color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+@media (max-width: 900px) {
+  .hcvae-layout { grid-template-columns: minmax(0, 1fr); }
 }
