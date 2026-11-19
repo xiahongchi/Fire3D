@@ -13,7 +13,7 @@
     <meta property="og:image" content="assets/teaser_v10.jpg">
     <title>FIRE3D</title>
     <link rel="preconnect" href="https://huggingface.co">
-    <link rel="stylesheet" href="assets/css/site.css?v=paper-v10">
+    <link rel="stylesheet" href="assets/css/site.css?v=paper-v11">
     <script type="importmap">
       {
         "imports": {
@@ -388,7 +388,7 @@
           <p class="section-kicker">Evidence</p>
           <h2 id="results-title">The complete task, tested one claim at a time.</h2>
           <p>
-            These comparisons cover perception, object completion, end-to-end reconstruction, single-image transfer, and generalization. Real-world quantitative tests cover AEO perception and ShapeR object geometry; rendering comparisons use synthetic data.
+            These comparisons cover perception, object completion, end-to-end reconstruction, single-image transfer, and generalization. Real-world quantitative tests cover AEO perception, ShapeR object geometry, ScanNet++ scene reconstruction, and the CA-1M, ADT, and NymeriaPlus perception benchmarks; rendering comparisons use synthetic data.
           </p>
         </div>
         <div class="results-stack">
@@ -415,6 +415,14 @@
             </header>
             <div class="native-panel-grid" data-paper-grid></div>
             <p class="paper-result-caption">The methods receive the same visual capture. Fire3D performs its own perception and reconstructs textured assets in their predicted scene layout; the EFM3D + ShapeR pipeline composes separate detection and geometry stages. Geometry metrics use matched objects; mAP/mIoU account for missed instances.</p>
+          </article>
+          <article class="paper-result" data-paper-result="real-world-reconstruction">
+            <header class="paper-result-head">
+              <div><span>Real-world captures</span><h3>End-to-end reconstruction on ScanNet++ video</h3></div>
+              <div class="paper-result-controls" data-paper-controls></div>
+            </header>
+            <div class="native-panel-grid" data-paper-grid></div>
+            <p class="paper-result-caption">On 10 randomly chosen real ScanNet++ scenes, Fire3D reaches 16.95 cm scene CD, 0.458 F1@5cm, and 0.610 NC, against 29.02 cm, 0.221, and 0.557 for Boxer + SAM2 + TRELLIS.2 and 40.34 cm, 0.189, and 0.527 for EFM3D + ShapeR. All methods use the same 60 input frames and the camera of the input view; background geometry is omitted for all columns.</p>
           </article>
           <article class="paper-result" data-paper-result="single-image">
             <header class="paper-result-head">
@@ -462,13 +470,15 @@
         <div class="section-heading">
           <p class="section-kicker">Nearest alternatives</p>
           <h2 id="comparisons-title">Where the unified design changes the trade-off.</h2>
-          <p>Matched views test Fire3D against optimization-based reconstruction, scene perception, object completion, and a composed detector-to-generator pipeline.</p>
+          <p>Matched views test Fire3D against optimization-based reconstruction, scene perception on synthetic and real-world benchmarks, object completion, a composed detector-to-generator pipeline, and a per-scene coding agent.</p>
         </div>
         <div class="comparison-tabs" role="tablist" aria-label="Comparison method">
           <button type="button" class="is-active" role="tab" aria-selected="true" data-comparison-tab="holoscene">HoloScene</button>
           <button type="button" role="tab" aria-selected="false" data-comparison-tab="simrecon">SimRecon</button>
+          <button type="button" role="tab" aria-selected="false" data-comparison-tab="boxer">Boxer · real world</button>
           <button type="button" role="tab" aria-selected="false" data-comparison-tab="litereality">LiteReality</button>
           <button type="button" role="tab" aria-selected="false" data-comparison-tab="composed">Composed pipeline</button>
+          <button type="button" role="tab" aria-selected="false" data-comparison-tab="agent">Coding agent</button>
         </div>
 
         <article class="comparison-panel is-active" data-comparison-panel="holoscene">
@@ -501,6 +511,18 @@
           <div class="panel-grid panel-grid-3" data-simrecon-grid></div>
         </article>
 
+        <article class="comparison-panel" data-comparison-panel="boxer" data-paper-result="boxer-real-world" hidden>
+          <div class="comparison-head">
+            <div>
+              <h3>Zero-shot perception on real-world benchmarks</h3>
+              <p>On Boxer's three real-world benchmarks, Fire3D is evaluated zero-shot and uses none of these datasets in training. It exceeds Boxer on CA-1M (0.250 vs. 0.212 mAP) and ADT (0.276 vs. 0.215), and is on par on NymeriaPlus (0.187 vs. 0.184, public ground truth). Green denotes ground truth or a prediction with 3D IoU &ge; 0.25, red an unmatched prediction, and orange a missed object.</p>
+            </div>
+            <div class="paper-result-controls" data-paper-controls></div>
+          </div>
+          <div class="native-panel-grid" data-paper-grid></div>
+          <p class="paper-result-caption">Class-agnostic mAP averaged over 3D IoU thresholds from 0.05 to 0.5. Boxer's evaluation code is not released, so we reimplement its protocol and evaluate its released model; our evaluation reproduces its published CA-1M and ADT numbers within 0.01 mAP.</p>
+        </article>
+
         <article class="comparison-panel" data-comparison-panel="litereality" hidden>
           <div class="comparison-head">
             <div>
@@ -523,6 +545,30 @@
             </div>
           </div>
           <div class="panel-grid panel-grid-3" data-composed-grid></div>
+        </article>
+
+        <article class="comparison-panel" data-comparison-panel="agent" hidden>
+          <div class="comparison-head">
+            <div>
+              <h3>Per-scene coding agent</h3>
+              <p>Claude Opus 5.5, set up as a per-scene reconstruction agent with the same posed RGB-D input and no external learned models, back-projects depth, fits planes and boxes, builds each object from primitives in code, and iterates against the input frames. It reaches higher accuracy (0.805 vs. 0.627 mAP) but spends 13.9 to 24.4 min and $3.9 to $9.2 per scene; Fire3D's geometry pathway takes 16 to 21 s and about $0.01 of GPU time, and also predicts 3D instance masks.</p>
+            </div>
+            <div class="comparison-nav">
+              <select aria-label="Agent comparison video" data-agent-race></select>
+            </div>
+          </div>
+          <figure class="agent-race">
+            <video controls muted autoplay loop playsinline preload="metadata" data-agent-video></video>
+            <figcaption>Wall-clock race on four test scenes. SAM 3D Objects is given ground-truth instance masks; Fire3D times are the batched geometry-only pathway from posed RGB-D.</figcaption>
+          </figure>
+          <div class="agent-combo" data-paper-result="agent-combination">
+            <header class="paper-result-head">
+              <div><span>Complementary</span><h3>Starting the agent from Fire3D</h3></div>
+              <div class="paper-result-controls" data-paper-controls></div>
+            </header>
+            <div class="native-panel-grid" data-paper-grid></div>
+            <p class="paper-result-caption">Initialized with Fire3D's per-object meshes instead of an empty scene, the same agent reaches 0.642 mAP with 90 matched objects at 7 min, against 0.353 and 47 for the agent alone. Given enough time, the combination ends with the best mAP (0.828), CD, F1, and NC of all methods: the agent rebuilds box-like furniture from depth and keeps Fire3D's meshes for organic shapes such as beds, armchairs, and plants. One color per object instance; background omitted.</p>
+          </div>
         </article>
       </section>
 
@@ -584,7 +630,7 @@
       </div>
     </footer>
 
-    <script type="module" src="assets/js/site.js?v=perception-v9-jpg"></script>
+    <script type="module" src="assets/js/site.js?v=agent-v11"></script>
     <script type="module" src="assets/js/viewer.js"></script>
   </body>
 </html>

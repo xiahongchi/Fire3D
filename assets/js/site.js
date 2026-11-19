@@ -1,4 +1,5 @@
 import {
+  AGENT_RACES,
   COMPOSED_SCENES,
   HOLOSCENE,
   LITEREALITY,
@@ -8,7 +9,7 @@ import {
   composedAsset,
   literealityAsset,
   simreconAsset,
-} from "./data.js?v=perception-v9-jpg";
+} from "./data.js?v=agent-v11";
 
 const header = document.querySelector("[data-header]");
 const navToggle = document.querySelector("[data-nav-toggle]");
@@ -318,6 +319,25 @@ function renderComposed() {
 
 composedSelect?.addEventListener("change", renderComposed);
 renderComposed();
+
+const agentSelect = document.querySelector("[data-agent-race]");
+const agentVideo = document.querySelector("[data-agent-video]");
+if (agentSelect && agentVideo) {
+  for (const race of AGENT_RACES) {
+    const option = document.createElement("option");
+    option.value = race.id;
+    option.textContent = race.label;
+    agentSelect.append(option);
+  }
+  const showRace = () => {
+    const race = AGENT_RACES.find(({ id }) => id === agentSelect.value);
+    agentVideo.poster = race.poster;
+    agentVideo.src = race.src;
+    agentVideo.load();
+  };
+  agentSelect.addEventListener("change", showRace);
+  showRace();
+}
 
 document.querySelectorAll("main img").forEach((image) => {
   image.draggable = false;

@@ -120,6 +120,18 @@ export const SCENES = {
   ],
 };
 
+export const AGENT_RACES = [
+  { id: "grid", label: "All four scenes" },
+  { id: "scene1", label: "Scene 1" },
+  { id: "scene2", label: "Scene 2" },
+  { id: "scene3", label: "Scene 3" },
+  { id: "scene4", label: "Scene 4" },
+].map((race) => ({
+  ...race,
+  src: `./assets/content/paper/agent/race_${race.id}.mp4`,
+  poster: `./assets/content/paper/agent/race_${race.id}.jpg`,
+}));
+
 export const VIDEOS = {
   launch: [
     { src: "./assets/fire3d_launch.mp4", type: "video/mp4" },
@@ -224,6 +236,62 @@ export const PAPER_RESULTS = {
     ],
     path(sceneId, methodId) {
       return paperAsset("single_image", `${sceneId}/${methodId}.webp`);
+    },
+  },
+  "real-world-reconstruction": {
+    group: "scannetpp",
+    scenes: [
+      { id: "a1d9da703c_f166", label: "ScanNet++ · a1d9da703c" },
+      { id: "7e09430da7_f214", label: "ScanNet++ · 7e09430da7" },
+    ],
+    methods: [
+      { id: "input", label: "Input" },
+      { id: "shaper", label: "EFM3D + ShapeR" },
+      { id: "composed", label: "Boxer + SAM2 + TRELLIS.2" },
+      { id: "ours", label: "Fire3D", fire3d: true },
+    ],
+    path(sceneId, methodId) {
+      return `./assets/content/paper/scannetpp/${sceneId}/${methodId}.webp`;
+    },
+  },
+  "boxer-real-world": {
+    group: "boxer_real",
+    scenes: [
+      { id: "ca1m_42897545_f085", label: "CA-1M · 42897545" },
+      { id: "ca1m_45663113_f209", label: "CA-1M · 45663113" },
+      { id: "adt_seq106_f003", label: "ADT · sequence 106, frame 3" },
+      { id: "adt_seq106_f008", label: "ADT · sequence 106, frame 8" },
+      { id: "nymeriaplus_3noipq_f091", label: "NymeriaPlus · 3noipq" },
+      { id: "nymeriaplus_nzzk0t_f114", label: "NymeriaPlus · nzzk0t" },
+    ],
+    methods: [
+      { id: "rgb", label: "Input" },
+      { id: "boxer", label: "Boxer" },
+      { id: "ours", label: "Fire3D (zero-shot)", fire3d: true },
+      { id: "ground_truth", label: "Ground truth" },
+    ],
+    path(sceneId, methodId) {
+      return `./assets/content/paper/boxer_real/${sceneId}/${methodId}.webp`;
+    },
+  },
+  "agent-combination": {
+    group: "agent_combo",
+    scenes: [
+      { id: "computer_room_03_view_s1", label: "Imaginarium · Computer Room 03" },
+      { id: "bedroom_01_view_v1", label: "Imaginarium · Bedroom 01" },
+      { id: "bedroom_35_view_s2", label: "Imaginarium · Bedroom 35" },
+      { id: "iTHOR_FloorPlan312_physics_view_s1", label: "iTHOR · FloorPlan 312" },
+    ],
+    methods: [
+      { id: "gt", label: "Ground truth" },
+      { id: "opus_7min", label: "Agent · 7 min" },
+      { id: "opus", label: "Agent · final" },
+      { id: "ours", label: "Fire3D · 16–21 s", fire3d: true },
+      { id: "ours_opus_7min", label: "Fire3D + agent · 7 min", fire3d: true },
+      { id: "ours_opus", label: "Fire3D + agent · final", fire3d: true },
+    ],
+    path(sceneId, methodId) {
+      return `./assets/content/paper/agent_combo/${sceneId}/${methodId}.webp`;
     },
   },
   generalization: {

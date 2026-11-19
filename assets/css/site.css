@@ -2299,3 +2299,47 @@ footer {
 @media (max-width: 900px) {
   .hcvae-layout { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Coding-agent comparison and real-world additions */
+.comparison-panel .paper-result-controls {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.agent-race {
+  margin: 0;
+}
+
+.agent-race video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3840 / 1088;
+  border: 1px solid #d7dad4;
+  background: white;
+}
+
+.agent-race figcaption {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.agent-combo {
+  margin-top: 40px;
+}
+
+@media (max-width: 760px) {
+  .agent-race {
+    overflow-x: auto;
+  }
+
+  .agent-race video {
+    width: 760px;
+    max-width: none;
+  }
+
+  .comparison-panel .paper-result-controls {
+    justify-content: flex-start;
+  }
+}
